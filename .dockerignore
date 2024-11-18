@@ -1,0 +1,9 @@
+image
+.gitignore
+LICENSE
+main.py
+.venv
+.env
+README.md
+.gitignore
+__pycache__

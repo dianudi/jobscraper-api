@@ -1,0 +1,48 @@
+name: Pylint
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Upload files
+        uses: Dylan700/sftp-upload-action@latest
+        with:
+          server: ${{ secrets.SSH_SERVER }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          uploads: |
+            ./ => ./internal/docker_data/jobs-scraper
+          ignore: |
+            *.git
+            */**/*git*
+            .env
+            README.md
+            .gitea
+            .github
+            .gitignore
+            image
+            LICENSE
+        if: github.event_name != 'pull_request'
+
+      - name: Build image and deploy on Docker container
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.SSH_SERVER }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          command_timeout: 60m
+          script: |
+            cd internal/docker_data/jobs-scraper
+            echo ${{ secrets.SSH_PASSWORD }} | sudo -S docker compose up -d --build
+        if: github.event_name != 'pull_request'
